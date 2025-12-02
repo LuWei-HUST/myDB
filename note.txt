@@ -3,3 +3,12 @@
 
 编译
     cmake --build .
+
+vcpkg
+    vcpkg 是微软开发的开源 C/C++ 包管理器，跨平台支持
+
+只构建主程序
+    cmake --build . --target myDB
+
+只构建测试程序
+    cmake --build . --target test_mydb
