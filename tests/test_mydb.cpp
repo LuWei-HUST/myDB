@@ -41,25 +41,101 @@ protected:
         
         return buffer.str();
     }
+
+    std::vector<std::string> splitLines(const std::string& text) {
+        std::vector<std::string> lines;
+        std::stringstream ss(text);
+        std::string line;
+        
+        while (std::getline(ss, line)) {
+            lines.push_back(line);
+        }
+        
+        return lines;
+    }
 };
 
-TEST_F(DatabaseTest, InsertCommand) {
-    std::string input = "insert 1 luwei luwei@db.com";
+TEST_F(DatabaseTest, inserts_and_retrieves_a_row) {
+    std::string input = "insert 1 user1 person1@example.com";
     input += "\nselect";
     std::string output = runMyDB(input);
     
-    std::cout << "=== DEBUG OUTPUT ===" << std::endl;
-    std::cout << "Output (" << output.length() << " chars):" << std::endl;
-    std::cout << output << std::endl;
-    std::cout << "=== END DEBUG ===" << std::endl;
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
     
-    // 检查是否有任何输出
-    EXPECT_FALSE(output.empty()) << "Program should produce output";
+    // 期望的输出行（根据你的程序实际输出调整）
+    std::vector<std::string> expected = {
+        "db > Executed.",
+        "db > (1, user1, person1@example.com)",
+        "Executed.",
+        "db > "
+    };
     
-    // 检查是否包含某些关键词（宽松检查）
-    bool hasContent = output.find("Executed") != std::string::npos;
+    // 逐行比较
+    for (size_t i = 0; i < std::min(lines.size(), expected.size()); ++i) {
+        EXPECT_EQ(lines[i], expected[i]) 
+            << "Line " << i + 1 << " mismatch.\n"
+            << "Expected: \"" << expected[i] << "\"\n"
+            << "Actual:   \"" << lines[i] << "\"";
+    }
     
-    EXPECT_TRUE(hasContent) << "Output should contain expected text. Got:\n" << output;
+    // 确保行数匹配
+    EXPECT_EQ(lines.size(), expected.size()) 
+        << "Line count mismatch. Expected " << expected.size() 
+        << " lines, got " << lines.size() << " lines.";
+}
+
+TEST_F(DatabaseTest, prints_error_message_when_table_is_full) {
+    std::string input = "";
+
+    for (int i=0; i < 1400; ++i) {
+        input += "insert " + std::to_string(i) + " user" + std::to_string(i) + " person" + std::to_string(i) + "@example.com\n";
+    }
+    input += "insert 1400 user1400 person1400@example.com";
+
+    std::string output = runMyDB(input);
+    
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
+    
+    // 期望的输出行（根据你的程序实际输出调整）
+    std::vector<std::string> expected = {
+        "db > Error: Table full."
+    };
+
+    int i = lines.size() - 2;
+    
+    EXPECT_EQ(lines[i], expected[0]) 
+        << "Line " << i + 1 << " mismatch.\n"
+        << "Expected: \"" << expected[0] << "\"\n"
+        << "Actual:   \"" << lines[i] << "\"";
+}
+
+TEST_F(DatabaseTest, meta_cmd_syntax_error) {
+    std::string input = ".invalid_command";
+    std::string output = runMyDB(input);
+    
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
+    
+    // 期望的输出行（根据你的程序实际输出调整）
+    std::vector<std::string> expected = {
+        "db > Unrecognized command '.invalid_command'.",
+        "db > "
+    };
+    
+    // 逐行比较
+    for (size_t i = 0; i < std::min(lines.size(), expected.size()); ++i) {
+        EXPECT_EQ(lines[i], expected[i]) 
+            << "Line " << i + 1 << " mismatch.\n"
+            << "Expected: \"" << expected[i] << "\"\n"
+            << "Actual:   \"" << lines[i] << "\"";
+    }
+    
+    // 确保行数匹配
+    EXPECT_EQ(lines.size(), expected.size()) 
+        << "Line count mismatch. Expected " << expected.size() 
+        << " lines, got " << lines.size() << " lines.";
 }
 
 int main(int argc, char **argv) {
