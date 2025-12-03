@@ -11,14 +11,25 @@ PrepareResult prepare_statement(string input_buffer, Statement* statement) {
         statement->type = STATEMENT_INSERT;
         istringstream iss(input_buffer);
         string command;
+        string username;
+        string email;
 
-        if (!(iss >> command >> statement->row_to_insert.id >> statement->row_to_insert.username >> statement->row_to_insert.email)) {
+        if (!(iss >> command >> statement->row_to_insert.id >> username >> email)) {
             return PREPARE_SYNTAX_ERROR;
         }
 
         if (command != "insert") {
             return PREPARE_SYNTAX_ERROR;
         }
+
+        if (username.length() > COLUMN_USERNAME_SIZE || email.length() > COLUMN_EMAIL_SIZE) {
+            return PREPARE_STRING_TOO_LONG;
+        }
+
+        strncpy(statement->row_to_insert.username, username.c_str(), COLUMN_USERNAME_SIZE);
+        statement->row_to_insert.username[username.length()] = '\0';
+        strncpy(statement->row_to_insert.email, email.c_str(), COLUMN_EMAIL_SIZE);
+        statement->row_to_insert.email[email.length()] = '\0';
 
         return PREPARE_SUCCESS;
     }
@@ -143,6 +154,9 @@ int main(int argc, char* argv[]) {
                 break;
             case (PREPARE_SYNTAX_ERROR):
                 cout << "Syntax error. Could not parse statement." << endl;
+                continue;
+            case (PREPARE_STRING_TOO_LONG):
+                cout << "String is too long." << endl;
                 continue;
             case (PREPARE_UNRECOGNIZED_STATEMENT):
                 cout << "Unrecognized keyword at start of '" << input_buffer << "'." << endl;

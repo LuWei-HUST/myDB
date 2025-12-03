@@ -111,6 +111,81 @@ TEST_F(DatabaseTest, prints_error_message_when_table_is_full) {
         << "Actual:   \"" << lines[i] << "\"";
 }
 
+TEST_F(DatabaseTest, allows_inserting_strings_that_are_the_maximum_length) {
+    std::string long_username(32, 'a'); // 32 个 'a'
+    std::string long_email(255, 'b');   // 255 个 'b
+    std::string input = "";
+    input += "insert 1 " + long_username + " " + long_email + "\n";
+    input += "select";
+
+    std::string output = runMyDB(input);
+    
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
+
+    // for (size_t i = 0; i < lines.size(); ++i) {
+    //     std::cout << "Line " << i + 1 << ": " << lines[i] << std::endl;
+    // }
+    
+    // 期望的输出行（根据你的程序实际输出调整）
+    std::vector<std::string> expected = {
+        "db > Executed.",
+        "db > (1, " + long_username + ", " + long_email + ")",
+        "Executed.",
+        "db > "
+    };
+
+    // 逐行比较
+    for (size_t i = 0; i < std::min(lines.size(), expected.size()); ++i) {
+        EXPECT_EQ(lines[i], expected[i]) 
+            << "Line " << i + 1 << " mismatch.\n"
+            << "Expected: \"" << expected[i] << "\"\n"
+            << "Actual:   \"" << lines[i] << "\"";
+    }
+    
+    // 确保行数匹配
+    EXPECT_EQ(lines.size(), expected.size()) 
+        << "Line count mismatch. Expected " << expected.size() 
+        << " lines, got " << lines.size() << " lines.";
+}
+
+TEST_F(DatabaseTest, prints_error_message_if_strings_are_too_long) {
+    std::string long_username(33, 'a'); // 33 个 'a'
+    std::string long_email(256, 'b');   // 256 个 'b
+    std::string input = "";
+    input += "insert 1 " + long_username + " " + long_email + "\n";
+    input += "select";
+
+    std::string output = runMyDB(input);
+    
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
+
+    // for (size_t i = 0; i < lines.size(); ++i) {
+    //     std::cout << "Line " << i + 1 << ": " << lines[i] << std::endl;
+    // }
+    
+    // 期望的输出行（根据你的程序实际输出调整）
+    std::vector<std::string> expected = {
+        "db > String is too long.",
+        "db > Executed.",
+        "db > "
+    };
+
+    // 逐行比较
+    for (size_t i = 0; i < std::min(lines.size(), expected.size()); ++i) {
+        EXPECT_EQ(lines[i], expected[i]) 
+            << "Line " << i + 1 << " mismatch.\n"
+            << "Expected: \"" << expected[i] << "\"\n"
+            << "Actual:   \"" << lines[i] << "\"";
+    }
+    
+    // 确保行数匹配
+    EXPECT_EQ(lines.size(), expected.size()) 
+        << "Line count mismatch. Expected " << expected.size() 
+        << " lines, got " << lines.size() << " lines.";
+}
+
 TEST_F(DatabaseTest, meta_cmd_syntax_error) {
     std::string input = ".invalid_command";
     std::string output = runMyDB(input);
