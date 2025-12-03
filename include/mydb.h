@@ -63,7 +63,8 @@ typedef struct {
 
 typedef enum { 
     EXECUTE_SUCCESS, 
-    EXECUTE_TABLE_FULL 
+    EXECUTE_TABLE_FULL,
+    EXECUTE_UNKNOWN_COMMAND 
 } ExecuteResult;
 
 
