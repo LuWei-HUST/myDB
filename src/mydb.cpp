@@ -81,8 +81,8 @@ void deserialize_row(void* source, Row* destination) {
 
 void* get_page(Pager* pager, uint32_t page_num) {
     if (page_num > TABLE_MAX_PAGES) {
-        printf("Tried to fetch page number out of bounds. %d > %d\n", page_num,
-            TABLE_MAX_PAGES);
+        cout << "Tried to fetch page number out of bounds. " << page_num
+             << " > " << TABLE_MAX_PAGES << endl;
         exit(EXIT_FAILURE);
     }
     if (pager->pages[page_num] == NULL) {
@@ -97,7 +97,7 @@ void* get_page(Pager* pager, uint32_t page_num) {
             lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
             ssize_t bytes_read = read(pager->file_descriptor, page, PAGE_SIZE);
             if (bytes_read == -1) {
-                printf("Error reading file: %d\n", errno);
+                cout << "Error reading file: " << errno << endl;
                 exit(EXIT_FAILURE);
             }
         }
@@ -145,7 +145,7 @@ Pager* pager_open(const char* filename) {
                         S_IRUSR   // User read permission
                     );
     if (fd == -1) {
-        printf("Unable to open file\n");
+        cout << "Unable to open file." << endl;
         exit(EXIT_FAILURE);
     }
     off_t file_length = lseek(fd, 0, SEEK_END);
@@ -191,7 +191,7 @@ void db_close(Table* table) {
     }
     int result = close(pager->file_descriptor);
     if (result == -1) {
-        printf("Error closing db file.\n");
+        cout << "Error closing db file." << endl;
         exit(EXIT_FAILURE);
     }
     for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
@@ -207,25 +207,25 @@ void db_close(Table* table) {
 
 void pager_flush(Pager* pager, uint32_t page_num, uint32_t size) {
     if (pager->pages[page_num] == NULL) {
-        printf("Tried to flush null page\n");
+        cout << "Tried to flush null page" << endl;
         exit(EXIT_FAILURE);
     }
     off_t offset = lseek(pager->file_descriptor, page_num * PAGE_SIZE, SEEK_SET);
     if (offset == -1) {
-        printf("Error seeking: %d\n", errno);
+        cout << "Error seeking: " << errno << endl;
         exit(EXIT_FAILURE);
     }
     ssize_t bytes_written =
         write(pager->file_descriptor, pager->pages[page_num], size);
     if (bytes_written == -1) {
-        printf("Error writing: %d\n", errno);
+        cout << "Error writing: " << errno << endl;
         exit(EXIT_FAILURE);
     }
 }
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        printf("Must supply a database filename.\n");
+        cout << "Must supply a database filename." << endl;
         exit(EXIT_FAILURE);
     }
 
