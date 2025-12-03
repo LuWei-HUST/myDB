@@ -1,5 +1,6 @@
 运行cmake
-    cmake -G "MinGW Makefiles" ..
+    win cmake -G "MinGW Makefiles" ..
+    linux cmake ..
 
 编译
     cmake --build .

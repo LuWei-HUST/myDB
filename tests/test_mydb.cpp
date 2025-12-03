@@ -26,7 +26,7 @@ protected:
         }
         
         // 2. 运行程序（重定向输入输出）
-        std::string command = "myDB.exe < test_input.txt > test_output.txt";
+        std::string command = "./myDB < test_input.txt > test_output.txt";
         int result = std::system(command.c_str());
         
         // 3. 读取输出文件

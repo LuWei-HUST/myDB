@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdint>
+#include <cstring>
 
 typedef enum {
     META_COMMAND_SUCCESS,
