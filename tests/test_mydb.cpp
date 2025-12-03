@@ -8,6 +8,7 @@ protected:
         // 清理可能的临时文件
         std::remove("test_input.txt");
         std::remove("test_output.txt");
+        std::remove("test.db");
     }
     
     void TearDown() override {
@@ -21,12 +22,11 @@ protected:
         {
             std::ofstream in("test_input.txt");
             in << input << std::endl;
-            in << ".exit" << std::endl;  // 确保程序会退出
             in.close();
         }
         
         // 2. 运行程序（重定向输入输出）
-        std::string command = "./myDB < test_input.txt > test_output.txt";
+        std::string command = "./myDB test.db < test_input.txt > test_output.txt";
         int result = std::system(command.c_str());
         
         // 3. 读取输出文件
@@ -58,6 +58,7 @@ protected:
 TEST_F(DatabaseTest, inserts_and_retrieves_a_row) {
     std::string input = "insert 1 user1 person1@example.com";
     input += "\nselect";
+    input += "\n.exit";
     std::string output = runMyDB(input);
     
     // 分割成行
@@ -92,6 +93,7 @@ TEST_F(DatabaseTest, prints_error_message_when_table_is_full) {
         input += "insert " + std::to_string(i) + " user" + std::to_string(i) + " person" + std::to_string(i) + "@example.com\n";
     }
     input += "insert 1400 user1400 person1400@example.com";
+    input += "\n.exit";
 
     std::string output = runMyDB(input);
     
@@ -117,6 +119,7 @@ TEST_F(DatabaseTest, allows_inserting_strings_that_are_the_maximum_length) {
     std::string input = "";
     input += "insert 1 " + long_username + " " + long_email + "\n";
     input += "select";
+    input += "\n.exit";
 
     std::string output = runMyDB(input);
     
@@ -155,6 +158,7 @@ TEST_F(DatabaseTest, prints_error_message_if_strings_are_too_long) {
     std::string input = "";
     input += "insert 1 " + long_username + " " + long_email + "\n";
     input += "select";
+    input += "\n.exit";
 
     std::string output = runMyDB(input);
     
@@ -186,8 +190,66 @@ TEST_F(DatabaseTest, prints_error_message_if_strings_are_too_long) {
         << " lines, got " << lines.size() << " lines.";
 }
 
+TEST_F(DatabaseTest, keeps_data_after_closing_connection) {
+    std::string input = "insert 1 user1 person1@example.com";
+    input += "\n.exit";
+
+    std::string output = runMyDB(input);
+    
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
+    
+    // 期望的输出行（根据你的程序实际输出调整）
+    std::vector<std::string> expected = {
+        "db > Executed.",
+        "db > "
+    };
+
+    // 逐行比较
+    for (size_t i = 0; i < std::min(lines.size(), expected.size()); ++i) {
+        EXPECT_EQ(lines[i], expected[i]) 
+            << "Line " << i + 1 << " mismatch.\n"
+            << "Expected: \"" << expected[i] << "\"\n"
+            << "Actual:   \"" << lines[i] << "\"";
+    }
+    
+    // 确保行数匹配
+    EXPECT_EQ(lines.size(), expected.size()) 
+        << "Line count mismatch. Expected " << expected.size() 
+        << " lines, got " << lines.size() << " lines.";
+
+    // 重新打开数据库并查询
+    input = "select";
+    input += "\n.exit";
+    output = runMyDB(input);
+
+    // 分割成行
+    lines = splitLines(output);
+
+    // 期望的输出行
+    expected = {
+        "db > (1, user1, person1@example.com)",
+        "Executed.",
+        "db > "
+    };
+
+    // 逐行比较
+    for (size_t i = 0; i < std::min(lines.size(), expected.size()); ++i) {
+        EXPECT_EQ(lines[i], expected[i]) 
+            << "Line " << i + 1 << " mismatch.\n"
+            << "Expected: \"" << expected[i] << "\"\n"
+            << "Actual:   \"" << lines[i] << "\"";
+    }
+
+    // 确保行数匹配
+    EXPECT_EQ(lines.size(), expected.size()) 
+        << "Line count mismatch. Expected " << expected.size() 
+        << " lines, got " << lines.size() << " lines.";
+}
+
 TEST_F(DatabaseTest, meta_cmd_syntax_error) {
     std::string input = ".invalid_command";
+    input += "\n.exit";
     std::string output = runMyDB(input);
     
     // 分割成行

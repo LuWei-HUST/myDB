@@ -5,6 +5,9 @@
 #include <sstream>
 #include <cstdint>
 #include <cstring>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstdlib>
 
 typedef enum {
     META_COMMAND_SUCCESS,
@@ -57,9 +60,16 @@ const uint32_t PAGE_SIZE = 4096;
 const uint32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
 const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
+
+typedef struct {
+  int file_descriptor;
+  uint32_t file_length;
+  void* pages[TABLE_MAX_PAGES];
+} Pager;
+
 typedef struct {
     uint32_t num_rows;
-    void* pages[TABLE_MAX_PAGES];
+    Pager* pager;
 } Table;
 
 typedef enum { 
@@ -72,14 +82,17 @@ typedef enum {
 void print_prompt();
 PrepareResult prepare_statement(std::string input_buffer, Statement* statement);
 ExecuteResult execute_statement(Statement* statement, Table* table);
-MetaCommandResult do_meta_command(std::string input_buffer);
+MetaCommandResult do_meta_command(std::string input_buffer, Table* table);
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
 void* row_slot(Table* table, uint32_t row_num);
 ExecuteResult execute_insert(Statement* statement, Table* table);
 ExecuteResult execute_select(Statement* statement, Table* table);
 void print_row(Row* row);
-Table* new_table();
-void free_table(Table* table);
+Pager* pager_open(const char* filename);
+Table* db_open(const char* filename);
+void* get_page(Pager* pager, uint32_t page_num);
+void db_close(Table* table);
+void pager_flush(Pager* pager, uint32_t page_num, uint32_t size);
 
 #endif
