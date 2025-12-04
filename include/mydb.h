@@ -78,6 +78,12 @@ typedef enum {
     EXECUTE_UNKNOWN_COMMAND 
 } ExecuteResult;
 
+typedef struct {
+    Table* table;
+    uint32_t row_num;
+    bool end_of_table;  // Indicates a position one past the last element
+} Cursor;
+
 
 void print_prompt();
 PrepareResult prepare_statement(std::string input_buffer, Statement* statement);
@@ -85,7 +91,7 @@ ExecuteResult execute_statement(Statement* statement, Table* table);
 MetaCommandResult do_meta_command(std::string input_buffer, Table* table);
 void serialize_row(Row* source, void* destination);
 void deserialize_row(void* source, Row* destination);
-void* row_slot(Table* table, uint32_t row_num);
+void* cursor_value(Cursor* cursor);
 ExecuteResult execute_insert(Statement* statement, Table* table);
 ExecuteResult execute_select(Statement* statement, Table* table);
 void print_row(Row* row);
@@ -94,5 +100,8 @@ Table* db_open(const char* filename);
 void* get_page(Pager* pager, uint32_t page_num);
 void db_close(Table* table);
 void pager_flush(Pager* pager, uint32_t page_num, uint32_t size);
+Cursor* table_start(Table* table);
+Cursor* table_end(Table* table);
+void cursor_advance(Cursor* cursor);
 
 #endif
