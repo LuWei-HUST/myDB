@@ -13,3 +13,6 @@ vcpkg
 
 只构建测试程序
     cmake --build . --target test_mydb
+
+gdb
+    gdb --args ./myDB test.db

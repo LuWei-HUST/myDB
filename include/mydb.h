@@ -63,7 +63,7 @@ const uint32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 typedef struct {
     int file_descriptor;
     uint32_t file_length;
-    uint32_t num_pages;
+    uint32_t num_pages;    // page的数量
     void* pages[TABLE_MAX_PAGES];
 } Pager;
 
@@ -144,5 +144,6 @@ void* leaf_node_cell(void* node, uint32_t cell_num);
 uint32_t* leaf_node_key(void* node, uint32_t cell_num);
 void* leaf_node_value(void* node, uint32_t cell_num);
 void initialize_leaf_node(void* node);
+void print_page(Pager* pager, uint32_t page_num);
 
 #endif
