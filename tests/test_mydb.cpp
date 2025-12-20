@@ -247,6 +247,44 @@ TEST_F(DatabaseTest, keeps_data_after_closing_connection) {
         << " lines, got " << lines.size() << " lines.";
 }
 
+TEST_F(DatabaseTest, allows_printing_out_the_structure_of_a_one_node_btree) {
+    std::string input = "insert 3 user3 person3@example.com";
+    input += "\ninsert 1 user1 person1@example.com";
+    input += "\ninsert 2 user2 person2@example.com";
+    input += "\n.btree";
+    input += "\n.exit";
+    std::string output = runMyDB(input);
+    
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
+    
+    // 期望的输出行（根据你的程序实际输出调整）
+    std::vector<std::string> expected = {
+        "db > Executed.",
+        "db > Executed.",
+        "db > Executed.",
+        "db > Tree:",
+        "leaf (size 3)",
+        "  - 0 : 3",
+        "  - 1 : 1",
+        "  - 2 : 2",
+        "db > "
+    };
+    
+    // 逐行比较
+    for (size_t i = 0; i < std::min(lines.size(), expected.size()); ++i) {
+        EXPECT_EQ(lines[i], expected[i]) 
+            << "Line " << i + 1 << " mismatch.\n"
+            << "Expected: \"" << expected[i] << "\"\n"
+            << "Actual:   \"" << lines[i] << "\"";
+    }
+    
+    // 确保行数匹配
+    EXPECT_EQ(lines.size(), expected.size()) 
+        << "Line count mismatch. Expected " << expected.size() 
+        << " lines, got " << lines.size() << " lines.";
+}
+
 TEST_F(DatabaseTest, meta_cmd_syntax_error) {
     std::string input = ".invalid_command";
     input += "\n.exit";
