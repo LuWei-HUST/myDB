@@ -439,6 +439,9 @@ int main(int argc, char* argv[]) {
             case (EXECUTE_SUCCESS):
                 cout << "Executed." << endl; 
                 break;
+            case (EXECUTE_DUPLICATE_KEY):
+                cout << "Error: Duplicate key." << endl;
+                break;
             case (EXECUTE_TABLE_FULL):
                 cout << "Error: Table full." << endl;
                 break;
