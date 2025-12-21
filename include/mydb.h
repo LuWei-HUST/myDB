@@ -73,7 +73,8 @@ typedef struct {
 } Table;
 
 typedef enum { 
-    EXECUTE_SUCCESS, 
+    EXECUTE_SUCCESS,
+    EXECUTE_DUPLICATE_KEY, 
     EXECUTE_TABLE_FULL,
     EXECUTE_UNKNOWN_COMMAND 
 } ExecuteResult;
@@ -134,7 +135,6 @@ void* get_page(Pager* pager, uint32_t page_num);
 void db_close(Table* table);
 void pager_flush(Pager* pager, uint32_t page_num);
 Cursor* table_start(Table* table);
-Cursor* table_end(Table* table);
 void cursor_advance(Cursor* cursor);
 void leaf_node_insert(Cursor* cursor, uint32_t key, Row* value);
 void print_constants();
@@ -145,5 +145,10 @@ uint32_t* leaf_node_key(void* node, uint32_t cell_num);
 void* leaf_node_value(void* node, uint32_t cell_num);
 void initialize_leaf_node(void* node);
 void print_page(Pager* pager, uint32_t page_num);
+Cursor* table_find(Table* table, uint32_t key);
+Cursor* leaf_node_find(Table* table, uint32_t page_num, uint32_t key);
+void set_node_type(void* node, NodeType type);
+NodeType get_node_type(void* node);
+void initialize_leaf_node(void* node);
 
 #endif
