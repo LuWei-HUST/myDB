@@ -498,6 +498,83 @@ TEST_F(DatabaseTest, prints_constants) {
         << " lines, got " << lines.size() << " lines.";
 }
 
+TEST_F(DatabaseTest, allows_printing_out_the_structure_of_a_4_leaf_node_btree) {
+    std::vector<std::string> input_lines = {
+        "insert 18 user18 person18@example.com",
+        "insert 7 user7 person7@example.com",
+        "insert 10 user10 person10@example.com",
+        "insert 29 user29 person29@example.com",
+        "insert 23 user23 person23@example.com",
+        "insert 4 user4 person4@example.com",
+        "insert 14 user14 person14@example.com",
+        "insert 30 user30 person30@example.com",
+        "insert 15 user15 person15@example.com",
+        "insert 26 user26 person26@example.com",
+        "insert 22 user22 person22@example.com",
+        "insert 19 user19 person19@example.com",
+        "insert 2 user2 person2@example.com",
+        "insert 1 user1 person1@example.com",
+        "insert 21 user21 person21@example.com",
+        "insert 11 user11 person11@example.com",
+        "insert 6 user6 person6@example.com",
+        "insert 20 user20 person20@example.com",
+        "insert 5 user5 person5@example.com",
+        "insert 8 user8 person8@example.com",
+        "insert 9 user9 person9@example.com",
+        "insert 3 user3 person3@example.com",
+        "insert 12 user12 person12@example.com",
+        "insert 27 user27 person27@example.com",
+        "insert 17 user17 person17@example.com",
+        "insert 16 user16 person16@example.com",
+        "insert 13 user13 person13@example.com",
+        "insert 24 user24 person24@example.com",
+        "insert 25 user25 person25@example.com",
+        "insert 28 user28 person28@example.com",
+    };
+
+    std::string input = "";
+
+    for (size_t i = 0; i < input_lines.size(); ++i) {
+        input += input_lines[i] + "\n";
+    }
+
+    input += ".btree\n";
+    input += ".exit";
+    std::string output = runMyDB(input);
+    
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
+
+    for (size_t i = 0; i < lines.size(); ++i) {
+        std::cout << "Line " << i + 1 << ": " << lines[i] << std::endl;
+    }
+    
+    // // 期望的输出行（根据你的程序实际输出调整）
+    // std::vector<std::string> expected = {
+    //     "db > Constants:",
+    //     "ROW_SIZE: 293",
+    //     "COMMON_NODE_HEADER_SIZE: 6",
+    //     "LEAF_NODE_HEADER_SIZE: 14",
+    //     "LEAF_NODE_CELL_SIZE: 297",
+    //     "LEAF_NODE_SPACE_FOR_CELLS: 4082",
+    //     "LEAF_NODE_MAX_CELLS: 13",
+    //     "db > ",
+    // };
+    
+    // // 逐行比较
+    // for (size_t i = 0; i < std::min(lines.size(), expected.size()); ++i) {
+    //     EXPECT_EQ(lines[i], expected[i]) 
+    //         << "Line " << i + 1 << " mismatch.\n"
+    //         << "Expected: \"" << expected[i] << "\"\n"
+    //         << "Actual:   \"" << lines[i] << "\"";
+    // }
+    
+    // // 确保行数匹配
+    // EXPECT_EQ(lines.size(), expected.size()) 
+    //     << "Line count mismatch. Expected " << expected.size() 
+    //     << " lines, got " << lines.size() << " lines.";
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
