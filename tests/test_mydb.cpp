@@ -99,10 +99,15 @@ TEST_F(DatabaseTest, prints_error_message_when_table_is_full) {
     
     // 分割成行
     std::vector<std::string> lines = splitLines(output);
+
+    for (size_t i = 0; i < lines.size(); ++i) {
+        std::cout << "Line " << i + 1 << ": " << lines[i] << std::endl;
+    }
     
     // 期望的输出行（根据你的程序实际输出调整）
     std::vector<std::string> expected = {
-        "db > Error: Table full."
+        "db > Executed.",
+        "db > Need to implement updating parent after split"
     };
 
     int i = lines.size() - 2;
@@ -264,10 +269,10 @@ TEST_F(DatabaseTest, allows_printing_out_the_structure_of_a_one_node_btree) {
         "db > Executed.",
         "db > Executed.",
         "db > Tree:",
-        "leaf (size 3)",
-        "  - 0 : 1",
-        "  - 1 : 2",
-        "  - 2 : 3",
+        "- leaf (size 3)",
+        "  - 1",
+        "  - 2",
+        "  - 3",
         "db > "
     };
     
@@ -342,6 +347,63 @@ TEST_F(DatabaseTest, prints_an_error_message_if_there_is_a_duplicate_id) {
     
     // 确保行数匹配
     EXPECT_EQ(lines.size(), expected.size()) 
+        << "Line count mismatch. Expected " << expected.size() 
+        << " lines, got " << lines.size() << " lines.";
+}
+
+TEST_F(DatabaseTest, allows_printing_out_the_structure_of_a_3_leaf_node_btree) {
+    std::string input = "";
+
+    for (int i=1; i < 15; ++i) {
+        input += "insert " + std::to_string(i) + " user" + std::to_string(i) + " person" + std::to_string(i) + "@example.com\n";
+    }
+    input += ".btree\n";
+    input += "insert 15 user15 person15@example.com\n";
+    input += ".exit";
+    std::string output = runMyDB(input);
+    
+    // 分割成行
+    std::vector<std::string> lines = splitLines(output);
+
+    // for (size_t i = 0; i < lines.size(); ++i) {
+    //     std::cout << "Line " << i + 1 << ": " << lines[i] << std::endl;
+    // }
+    
+    // 期望的输出行（根据你的程序实际输出调整）
+    std::vector<std::string> expected = {
+        "db > Tree:",
+        "- internal (size 1)",
+        "  - leaf (size 7)",
+        "    - 1",
+        "    - 2",
+        "    - 3",
+        "    - 4",
+        "    - 5",
+        "    - 6",
+        "    - 7",
+        "  - key 7",
+        "  - leaf (size 7)",
+        "    - 8",
+        "    - 9",
+        "    - 10",
+        "    - 11",
+        "    - 12",
+        "    - 13",
+        "    - 14",
+        "db > Executed.",
+        "db > "
+    };
+    
+    // 逐行比较
+    for (size_t i = 14; i < std::min(lines.size(), expected.size()); ++i) {
+        EXPECT_EQ(lines[i], expected[i-14]) 
+            << "Line " << i + 1 << " mismatch.\n"
+            << "Expected: \"" << expected[i] << "\"\n"
+            << "Actual:   \"" << lines[i] << "\"";
+    }
+    
+    // 确保行数匹配
+    EXPECT_EQ(lines.size(), expected.size()+14) 
         << "Line count mismatch. Expected " << expected.size() 
         << " lines, got " << lines.size() << " lines.";
 }
