@@ -6,7 +6,7 @@ project(myDB)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
 
 # 1. 添加主程序可执行文件
 add_executable(myDB src/mydb.cpp)
