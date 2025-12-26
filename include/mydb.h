@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <regex>
 
 typedef enum {
     META_COMMAND_SUCCESS,
@@ -22,7 +23,8 @@ typedef enum {
 } PrepareResult;
 
 typedef enum { 
-    STATEMENT_INSERT, 
+    STATEMENT_INSERT,
+    STATEMENT_CREATE,
     STATEMENT_SELECT 
 } StatementType;
 
@@ -34,9 +36,21 @@ typedef struct {
     char email[COLUMN_EMAIL_SIZE+1];
 } Row;
 
+#define COLUMN_MAX 20
+
+typedef enum {
+    INT,
+    STRING
+} Type;
+
+typedef struct {
+    Type cols[COLUMN_MAX];
+} TableSchema;
+
 typedef struct {
     StatementType type;
     Row row_to_insert;
+    TableSchema schema;
 } Statement;
 
 // (Struct*)0：将 0 转换为指向 Struct 类型的指针
@@ -197,5 +211,12 @@ void update_internal_node_key(void* node, uint32_t old_key, uint32_t new_key);
 uint32_t internal_node_find_child(void* node, uint32_t key);
 void internal_node_insert(Table* table, uint32_t parent_page_num, uint32_t child_page_num);
 void internal_node_split_and_insert(Table* table, uint32_t parent_page_num, uint32_t child_page_num);
+std::string ltrim(const std::string& s);
+std::string rtrim(const std::string& s);
+std::string trim(const std::string& s);
+void prepare_statement_fake(std::string input_buffer);
+std::vector<std::string> split(const std::string& str, char delimiter);
+std::vector<std::string> splitAndRemoveEmptyString(const std::string& str, char delimiter);
+
 
 #endif

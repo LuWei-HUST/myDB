@@ -6,7 +6,119 @@ void print_prompt() {
     cout << "db > "; 
 }
 
+// 去除左侧空格
+string ltrim(const string& s) {
+    size_t start = s.find_first_not_of(" \t\n\r\f\v");
+    return (start == string::npos) ? "" : s.substr(start);
+}
+
+// 去除右侧空格
+string rtrim(const string& s) {
+    size_t end = s.find_last_not_of(" \t\n\r\f\v");
+    return (end == string::npos) ? "" : s.substr(0, end + 1);
+}
+
+// 去除两侧空格
+string trim(const string& s) {
+    return rtrim(ltrim(s));
+}
+
+vector<string> split(const string& str, char delimiter) {
+    vector<string> result;
+    size_t start = 0;
+    size_t end = str.find(delimiter);
+    
+    while (end != string::npos) {
+        result.push_back(str.substr(start, end - start));
+        start = end + 1;
+        end = str.find(delimiter, start);
+    }
+    
+    // 添加最后一个部分
+    result.push_back(str.substr(start));
+    
+    return result;
+}
+
+vector<string> splitAndRemoveEmptyString(const string& str, char delimiter) {
+    vector<string> result_;
+    vector<string> result;
+    size_t start = 0;
+    size_t end = str.find(delimiter);
+    
+    while (end != string::npos) {
+        result_.push_back(str.substr(start, end - start));
+        start = end + 1;
+        end = str.find(delimiter, start);
+    }
+    
+    // 添加最后一个部分
+    result_.push_back(str.substr(start));
+
+    for (int i=0;i<result_.size();i++) {
+        if (trim(result_[i]).length() > 0) {
+            result.push_back(trim(result_[i]));
+        }
+    }
+    
+    return result;
+}
+
+void prepare_statement_fake(string input_buffer) {
+    input_buffer = trim(input_buffer);
+
+    string tableName;
+    vector<string> colNames;
+    vector<Type> colTypes;
+
+    regex pattern(R"(create\s+table\s+(\w+)\s*\((.*)\))");
+    
+    smatch matches;
+    if (regex_search(input_buffer, matches, pattern)) {
+        tableName = matches[1];
+        string columnsStr = matches[2];
+        vector<string> cols_ = split(columnsStr, ',');
+        vector<string> cols;
+        for (int i=0;i<cols_.size();i++) {
+            // ,分割后为空
+            if (trim(cols_[i]).length() == 0) {
+                cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
+            } else {
+                cols.push_back(trim(cols_[i]));
+            }
+        }
+        cout << "cols:\n";
+        vector<string> tmp_;
+        for (int i=0;i<cols.size();i++) {
+            tmp_ = splitAndRemoveEmptyString(cols[i], ' ');
+            if (tmp_.size() != 2) {
+                cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
+            } else {
+                if (tmp_[1] != "INT" && tmp_[1] != "STRING") {
+                    cout << "syntax error, unsupported type '" << tmp_[1] << "'\n";
+                } else {
+                    cout << "colName: " << tmp_[0] << "\n";
+                    cout << "colType: " << tmp_[1] << "\n";
+                    colNames.push_back(tmp_[0]);
+                    if (tmp_[1] == "INT") {
+                        colTypes.push_back(INT);
+                    } else if (tmp_[1] == "STRING") {
+                        colTypes.push_back(STRING);
+                    }
+                }
+            }
+        }
+        cout << endl;
+    } else {
+        cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
+    }
+
+}
+
 PrepareResult prepare_statement(string input_buffer, Statement* statement) {
+    // prepare_statement_fake(input_buffer);
+    input_buffer = trim(input_buffer);
+
     if (input_buffer.substr(0, 6) == "insert") {
         statement->type = STATEMENT_INSERT;
         istringstream iss(input_buffer);
@@ -31,6 +143,10 @@ PrepareResult prepare_statement(string input_buffer, Statement* statement) {
         strncpy(statement->row_to_insert.email, email.c_str(), COLUMN_EMAIL_SIZE);
         statement->row_to_insert.email[email.length()] = '\0';
 
+        return PREPARE_SUCCESS;
+    }
+    if (input_buffer.substr(0, 6) == "create") {
+        statement->type = STATEMENT_CREATE;
         return PREPARE_SUCCESS;
     }
     if (input_buffer == "select") {
@@ -300,7 +416,7 @@ uint32_t* internal_node_child(void* node, uint32_t child_num) {
 
 uint32_t* internal_node_key(void* node, uint32_t key_num) {
   // return internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE;
-    return (uint32_t*)((void*)internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE);
+    return (uint32_t*)((char*)internal_node_cell(node, key_num) + INTERNAL_NODE_CHILD_SIZE);
 }
 
 uint32_t get_node_max_key(Pager* pager, void* node) {
@@ -313,12 +429,12 @@ uint32_t get_node_max_key(Pager* pager, void* node) {
 
 
 bool is_node_root(void* node) {
-    uint8_t value = *((uint8_t*)(node + IS_ROOT_OFFSET));
+    uint8_t value = *((uint8_t*)((char*)node + IS_ROOT_OFFSET));
     return (bool)value;
 }
 void set_node_root(void* node, bool is_root) {
     uint8_t value = is_root;
-    *((uint8_t*)(node + IS_ROOT_OFFSET)) = value;
+    *((uint8_t*)((char*)node + IS_ROOT_OFFSET)) = value;
 }
 
 /*
@@ -508,6 +624,8 @@ Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
             return leaf_node_find(table, child_num, key);
         case NODE_INTERNAL:
             return internal_node_find(table, child_num, key);
+        default:
+            __builtin_unreachable();
     }
 }
 
@@ -539,13 +657,13 @@ Cursor* leaf_node_find(Table* table, uint32_t page_num, uint32_t key) {
 
 
 NodeType get_node_type(void* node) {
-    uint8_t value = *((uint8_t*)(node + NODE_TYPE_OFFSET));
+    uint8_t value = *((uint8_t*)((char*)node + NODE_TYPE_OFFSET));
     return (NodeType)value;
 }
 
 void set_node_type(void* node, NodeType type) {
     uint8_t value = type;
-    *((uint8_t*)(node + NODE_TYPE_OFFSET)) = value;
+    *((uint8_t*)((char*)node + NODE_TYPE_OFFSET)) = value;
 }
 
 ExecuteResult execute_select(Statement* statement, Table* table) {
@@ -683,16 +801,16 @@ uint32_t* leaf_node_next_leaf(void* node) {
 }
 
 uint32_t* leaf_node_num_cells(void* node) {
-    return static_cast<uint32_t*>(node + LEAF_NODE_NUM_CELLS_OFFSET);
+    return (uint32_t*)(((char*)node + LEAF_NODE_NUM_CELLS_OFFSET));
 }
 void* leaf_node_cell(void* node, uint32_t cell_num) {
-    return node + LEAF_NODE_HEADER_SIZE + cell_num * LEAF_NODE_CELL_SIZE;
+    return (void*)((char*)node + LEAF_NODE_HEADER_SIZE + cell_num * LEAF_NODE_CELL_SIZE);
 }
 uint32_t* leaf_node_key(void* node, uint32_t cell_num) {
     return static_cast<uint32_t*>(leaf_node_cell(node, cell_num));
 }
 void* leaf_node_value(void* node, uint32_t cell_num) {
-    return leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_SIZE;
+    return (void*)((char*)leaf_node_cell(node, cell_num) + LEAF_NODE_KEY_SIZE);
 }
 
 void initialize_leaf_node(void* node) {
