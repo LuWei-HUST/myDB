@@ -44,13 +44,14 @@ typedef enum {
 } Type;
 
 typedef struct {
-    Type cols[COLUMN_MAX];
+    std::vector<std::string> colNames;
+    std::vector<Type> colTypes;
 } TableSchema;
 
 typedef struct {
     StatementType type;
     Row row_to_insert;
-    TableSchema schema;
+    TableSchema table_to_create;
 } Statement;
 
 // (Struct*)0：将 0 转换为指向 Struct 类型的指针
@@ -214,9 +215,9 @@ void internal_node_split_and_insert(Table* table, uint32_t parent_page_num, uint
 std::string ltrim(const std::string& s);
 std::string rtrim(const std::string& s);
 std::string trim(const std::string& s);
-void prepare_statement_fake(std::string input_buffer);
 std::vector<std::string> split(const std::string& str, char delimiter);
 std::vector<std::string> splitAndRemoveEmptyString(const std::string& str, char delimiter);
+ExecuteResult execute_create(Statement* statement, Table* table);
 
 
 #endif

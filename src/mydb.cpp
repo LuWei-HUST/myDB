@@ -64,59 +64,7 @@ vector<string> splitAndRemoveEmptyString(const string& str, char delimiter) {
     return result;
 }
 
-void prepare_statement_fake(string input_buffer) {
-    input_buffer = trim(input_buffer);
-
-    string tableName;
-    vector<string> colNames;
-    vector<Type> colTypes;
-
-    regex pattern(R"(create\s+table\s+(\w+)\s*\((.*)\))");
-    
-    smatch matches;
-    if (regex_search(input_buffer, matches, pattern)) {
-        tableName = matches[1];
-        string columnsStr = matches[2];
-        vector<string> cols_ = split(columnsStr, ',');
-        vector<string> cols;
-        for (int i=0;i<cols_.size();i++) {
-            // ,分割后为空
-            if (trim(cols_[i]).length() == 0) {
-                cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
-            } else {
-                cols.push_back(trim(cols_[i]));
-            }
-        }
-        cout << "cols:\n";
-        vector<string> tmp_;
-        for (int i=0;i<cols.size();i++) {
-            tmp_ = splitAndRemoveEmptyString(cols[i], ' ');
-            if (tmp_.size() != 2) {
-                cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
-            } else {
-                if (tmp_[1] != "INT" && tmp_[1] != "STRING") {
-                    cout << "syntax error, unsupported type '" << tmp_[1] << "'\n";
-                } else {
-                    cout << "colName: " << tmp_[0] << "\n";
-                    cout << "colType: " << tmp_[1] << "\n";
-                    colNames.push_back(tmp_[0]);
-                    if (tmp_[1] == "INT") {
-                        colTypes.push_back(INT);
-                    } else if (tmp_[1] == "STRING") {
-                        colTypes.push_back(STRING);
-                    }
-                }
-            }
-        }
-        cout << endl;
-    } else {
-        cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
-    }
-
-}
-
 PrepareResult prepare_statement(string input_buffer, Statement* statement) {
-    // prepare_statement_fake(input_buffer);
     input_buffer = trim(input_buffer);
 
     if (input_buffer.substr(0, 6) == "insert") {
@@ -127,10 +75,12 @@ PrepareResult prepare_statement(string input_buffer, Statement* statement) {
         string email;
 
         if (!(iss >> command >> statement->row_to_insert.id >> username >> email)) {
+            cout << "Syntax error. Could not parse statement." << endl;
             return PREPARE_SYNTAX_ERROR;
         }
 
         if (command != "insert") {
+            cout << "Syntax error. Could not parse statement." << endl;
             return PREPARE_SYNTAX_ERROR;
         }
 
@@ -147,6 +97,59 @@ PrepareResult prepare_statement(string input_buffer, Statement* statement) {
     }
     if (input_buffer.substr(0, 6) == "create") {
         statement->type = STATEMENT_CREATE;
+
+        string tableName;
+        vector<string> colNames;
+        vector<Type> colTypes;
+
+        regex pattern(R"(create\s+table\s+(\w+)\s*\((.*)\))");
+        
+        smatch matches;
+        if (regex_search(input_buffer, matches, pattern)) {
+            tableName = matches[1];
+            string columnsStr = matches[2];
+            vector<string> cols_ = split(columnsStr, ',');
+            vector<string> cols;
+            for (int i=0;i<cols_.size();i++) {
+                // ,分割后为空
+                if (trim(cols_[i]).length() == 0) {
+                    cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
+                    return PREPARE_SYNTAX_ERROR;
+                } else {
+                    cols.push_back(trim(cols_[i]));
+                }
+            }
+            // cout << "cols:\n";
+            vector<string> tmp_;
+            for (int i=0;i<cols.size();i++) {
+                tmp_ = splitAndRemoveEmptyString(cols[i], ' ');
+                if (tmp_.size() != 2) {
+                    cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
+                    return PREPARE_SYNTAX_ERROR;
+                } else {
+                    if (tmp_[1] != "INT" && tmp_[1] != "STRING") {
+                        cout << "syntax error, unsupported type '" << tmp_[1] << "'\n";
+                        return PREPARE_SYNTAX_ERROR;
+                    } else {
+                        // cout << "colName: " << tmp_[0] << "\n";
+                        // cout << "colType: " << tmp_[1] << "\n";
+                        colNames.push_back(tmp_[0]);
+                        if (tmp_[1] == "INT") {
+                            colTypes.push_back(INT);
+                        } else if (tmp_[1] == "STRING") {
+                            colTypes.push_back(STRING);
+                        }
+                    }
+                }
+            }
+            // cout << endl;
+        } else {
+            cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
+            return PREPARE_SYNTAX_ERROR;
+        }
+        statement->table_to_create.colNames = colNames;
+        statement->table_to_create.colTypes = colTypes;
+
         return PREPARE_SUCCESS;
     }
     if (input_buffer == "select") {
@@ -162,6 +165,8 @@ ExecuteResult execute_statement(Statement* statement, Table* table) {
             return execute_insert(statement, table);
         case (STATEMENT_SELECT):
             return execute_select(statement, table);
+        case (STATEMENT_CREATE):
+            return execute_create(statement, table);
         default:
             // 不应该到达这里
             return EXECUTE_UNKNOWN_COMMAND;
@@ -678,6 +683,13 @@ ExecuteResult execute_select(Statement* statement, Table* table) {
     return EXECUTE_SUCCESS;
 }
 
+ExecuteResult execute_create(Statement* statement, Table* table) {
+    for (int i=0;i<statement->table_to_create.colNames.size();i++) {
+        cout << statement->table_to_create.colNames[i] << " " << statement->table_to_create.colTypes[i] << "\n";
+    }
+    return EXECUTE_SUCCESS;
+}
+
 void print_row(Row* row) {
     cout << "(" << row->id << ", " << row->username << ", " << row->email << ")" << endl;
 }
@@ -937,7 +949,6 @@ int main(int argc, char* argv[]) {
             case (PREPARE_SUCCESS):
                 break;
             case (PREPARE_SYNTAX_ERROR):
-                cout << "Syntax error. Could not parse statement." << endl;
                 continue;
             case (PREPARE_STRING_TOO_LONG):
                 cout << "String is too long." << endl;
