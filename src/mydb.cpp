@@ -873,17 +873,6 @@ void print_constants() {
     cout << "LEAF_NODE_MAX_CELLS: " << LEAF_NODE_MAX_CELLS << endl;
 }
 
-
-// void print_leaf_node(void* node) {
-//     uint32_t num_cells = *leaf_node_num_cells(node);
-//     cout << "leaf (size " << num_cells << ")" << endl;
-//     for (uint32_t i = 0; i < num_cells; i++) {
-//         uint32_t key = *leaf_node_key(node, i);
-//         cout << "  - " << i << " : " << key << endl;
-//     }
-// }
-
-
 void indent(uint32_t level) {
     for (uint32_t i = 0; i < level; i++) {
         cout << "  ";
