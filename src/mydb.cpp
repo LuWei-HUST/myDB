@@ -119,7 +119,6 @@ PrepareResult prepare_statement(string input_buffer, Statement* statement) {
                     cols.push_back(trim(cols_[i]));
                 }
             }
-            // cout << "cols:\n";
             vector<string> tmp_;
             for (int i=0;i<cols.size();i++) {
                 tmp_ = splitAndRemoveEmptyString(cols[i], ' ');
@@ -131,8 +130,6 @@ PrepareResult prepare_statement(string input_buffer, Statement* statement) {
                         cout << "syntax error, unsupported type '" << tmp_[1] << "'\n";
                         return PREPARE_SYNTAX_ERROR;
                     } else {
-                        // cout << "colName: " << tmp_[0] << "\n";
-                        // cout << "colType: " << tmp_[1] << "\n";
                         colNames.push_back(tmp_[0]);
                         if (tmp_[1] == "INT") {
                             colTypes.push_back(INT);
@@ -142,7 +139,10 @@ PrepareResult prepare_statement(string input_buffer, Statement* statement) {
                     }
                 }
             }
-            // cout << endl;
+            strncpy(statement->row_to_insert.name, tableName.c_str(), COLUMN_NAME_SIZE);
+            statement->row_to_insert.name[tableName.length()] = '\0';
+            strncpy(statement->row_to_insert.sql, input_buffer.c_str(), COLUMN_SQL_SIZE);
+            statement->row_to_insert.sql[input_buffer.length()] = '\0';
         } else {
             cout << "syntax error, create table tableName(col1 type1, col2 type2...);\n";
             return PREPARE_SYNTAX_ERROR;
@@ -263,19 +263,20 @@ void cursor_advance(Cursor* cursor) {
 }
 
 ExecuteResult execute_insert(Statement* statement, Table* table) {
-    // void* node = get_page(table->pager, table->root_page_num);
-    // uint32_t num_cells = (*leaf_node_num_cells(node));
-    // Row* row_to_insert = &(statement->row_to_insert);
-    // uint32_t key_to_insert = row_to_insert->id;
-    // Cursor* cursor = table_find(table, key_to_insert);
-    // if (cursor->cell_num < num_cells) {
-    //     uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
-    //     if (key_at_index == key_to_insert) {
-    //         return EXECUTE_DUPLICATE_KEY;
-    //     }
-    // }
-    // leaf_node_insert(cursor, row_to_insert->id, row_to_insert);
-    // free(cursor);
+    void* node = get_page(table->pager, table->root_page_num);
+    uint32_t num_cells = (*leaf_node_num_cells(node));
+    Row* row_to_insert = &(statement->row_to_insert);
+    row_to_insert->rootpage = table->root_page_num;
+    uint32_t key_to_insert = row_to_insert->rootpage;
+    Cursor* cursor = table_find(table, key_to_insert);
+    if (cursor->cell_num < num_cells) {
+        uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
+        if (key_at_index == key_to_insert) {
+            return EXECUTE_DUPLICATE_KEY;
+        }
+    }
+    leaf_node_insert(cursor, row_to_insert->rootpage, row_to_insert);
+    free(cursor);
     return EXECUTE_SUCCESS;
 }
 
@@ -684,9 +685,7 @@ ExecuteResult execute_select(Statement* statement, Table* table) {
 }
 
 ExecuteResult execute_create(Statement* statement, Table* table) {
-    for (int i=0;i<statement->table_to_create.colNames.size();i++) {
-        cout << statement->table_to_create.colNames[i] << " " << statement->table_to_create.colTypes[i] << "\n";
-    }
+    execute_insert(statement, table);
     return EXECUTE_SUCCESS;
 }
 
