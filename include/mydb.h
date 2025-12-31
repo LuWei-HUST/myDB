@@ -28,12 +28,12 @@ typedef enum {
     STATEMENT_SELECT 
 } StatementType;
 
-#define COLUMN_USERNAME_SIZE 32
-#define COLUMN_EMAIL_SIZE 255
+#define COLUMN_NAME_SIZE 32
+#define COLUMN_SQL_SIZE 255
 typedef struct {
-    uint32_t id;
-    char username[COLUMN_USERNAME_SIZE+1];
-    char email[COLUMN_EMAIL_SIZE+1];
+    uint32_t rootpage;
+    char name[COLUMN_NAME_SIZE+1];
+    char sql[COLUMN_SQL_SIZE+1];
 } Row;
 
 #define COLUMN_MAX 20
@@ -62,13 +62,13 @@ typedef struct {
 // 编译器知道成员的类型，所以能直接计算大小
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
 
-const uint32_t ID_SIZE = size_of_attribute(Row, id);
-const uint32_t USERNAME_SIZE = size_of_attribute(Row, username);
-const uint32_t EMAIL_SIZE = size_of_attribute(Row, email);
-const uint32_t ID_OFFSET = 0;
-const uint32_t USERNAME_OFFSET = ID_OFFSET + ID_SIZE;
-const uint32_t EMAIL_OFFSET = USERNAME_OFFSET + USERNAME_SIZE;
-const uint32_t ROW_SIZE = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
+const uint32_t ROOTPAGE_SIZE = size_of_attribute(Row, rootpage);
+const uint32_t NAME_SIZE = size_of_attribute(Row, name);
+const uint32_t SQL_SIZE = size_of_attribute(Row, sql);
+const uint32_t ROOTPAGE_OFFSET = 0;
+const uint32_t NAME_OFFSET = ROOTPAGE_OFFSET + ROOTPAGE_SIZE;
+const uint32_t SQL_OFFSET = NAME_OFFSET + NAME_SIZE;
+const uint32_t ROW_SIZE = ROOTPAGE_SIZE + NAME_SIZE + SQL_SIZE;
 
 #define TABLE_MAX_PAGES 100
 const uint32_t PAGE_SIZE = 4096;

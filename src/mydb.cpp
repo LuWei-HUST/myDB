@@ -68,30 +68,30 @@ PrepareResult prepare_statement(string input_buffer, Statement* statement) {
     input_buffer = trim(input_buffer);
 
     if (input_buffer.substr(0, 6) == "insert") {
-        statement->type = STATEMENT_INSERT;
-        istringstream iss(input_buffer);
-        string command;
-        string username;
-        string email;
+        // statement->type = STATEMENT_INSERT;
+        // istringstream iss(input_buffer);
+        // string command;
+        // string username;
+        // string email;
 
-        if (!(iss >> command >> statement->row_to_insert.id >> username >> email)) {
-            cout << "Syntax error. Could not parse statement." << endl;
-            return PREPARE_SYNTAX_ERROR;
-        }
+        // if (!(iss >> command >> statement->row_to_insert.id >> username >> email)) {
+        //     cout << "Syntax error. Could not parse statement." << endl;
+        //     return PREPARE_SYNTAX_ERROR;
+        // }
 
-        if (command != "insert") {
-            cout << "Syntax error. Could not parse statement." << endl;
-            return PREPARE_SYNTAX_ERROR;
-        }
+        // if (command != "insert") {
+        //     cout << "Syntax error. Could not parse statement." << endl;
+        //     return PREPARE_SYNTAX_ERROR;
+        // }
 
-        if (username.length() > COLUMN_USERNAME_SIZE || email.length() > COLUMN_EMAIL_SIZE) {
-            return PREPARE_STRING_TOO_LONG;
-        }
+        // if (username.length() > COLUMN_USERNAME_SIZE || email.length() > COLUMN_EMAIL_SIZE) {
+        //     return PREPARE_STRING_TOO_LONG;
+        // }
 
-        strncpy(statement->row_to_insert.username, username.c_str(), COLUMN_USERNAME_SIZE);
-        statement->row_to_insert.username[username.length()] = '\0';
-        strncpy(statement->row_to_insert.email, email.c_str(), COLUMN_EMAIL_SIZE);
-        statement->row_to_insert.email[email.length()] = '\0';
+        // strncpy(statement->row_to_insert.username, username.c_str(), COLUMN_USERNAME_SIZE);
+        // statement->row_to_insert.username[username.length()] = '\0';
+        // strncpy(statement->row_to_insert.email, email.c_str(), COLUMN_EMAIL_SIZE);
+        // statement->row_to_insert.email[email.length()] = '\0';
 
         return PREPARE_SUCCESS;
     }
@@ -195,17 +195,17 @@ MetaCommandResult do_meta_command(string input_buffer, Table* table) {
 void serialize_row(Row* source, void* destination) {
     char* dest = static_cast<char*>(destination);
 
-    memcpy(dest + ID_OFFSET, &(source->id), ID_SIZE);
-    strncpy(dest + USERNAME_OFFSET, source->username, USERNAME_SIZE);
-    strncpy(dest + EMAIL_OFFSET, source->email, EMAIL_SIZE);
+    memcpy(dest + ROOTPAGE_OFFSET, &(source->rootpage), ROOTPAGE_SIZE);
+    strncpy(dest + NAME_OFFSET, source->name, NAME_SIZE);
+    strncpy(dest + SQL_OFFSET, source->sql, SQL_SIZE);
 }
 
 void deserialize_row(void* source, Row* destination) {
     char* src = static_cast<char*>(source);
 
-    memcpy(&(destination->id), src + ID_OFFSET, ID_SIZE);
-    memcpy(&(destination->username), src + USERNAME_OFFSET, USERNAME_SIZE);
-    memcpy(&(destination->email), src + EMAIL_OFFSET, EMAIL_SIZE);
+    memcpy(&(destination->rootpage), src + ROOTPAGE_OFFSET, ROOTPAGE_SIZE);
+    memcpy(&(destination->name), src + NAME_OFFSET, NAME_SIZE);
+    memcpy(&(destination->sql), src + SQL_OFFSET, SQL_SIZE);
 }
 
 
@@ -263,19 +263,19 @@ void cursor_advance(Cursor* cursor) {
 }
 
 ExecuteResult execute_insert(Statement* statement, Table* table) {
-    void* node = get_page(table->pager, table->root_page_num);
-    uint32_t num_cells = (*leaf_node_num_cells(node));
-    Row* row_to_insert = &(statement->row_to_insert);
-    uint32_t key_to_insert = row_to_insert->id;
-    Cursor* cursor = table_find(table, key_to_insert);
-    if (cursor->cell_num < num_cells) {
-        uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
-        if (key_at_index == key_to_insert) {
-            return EXECUTE_DUPLICATE_KEY;
-        }
-    }
-    leaf_node_insert(cursor, row_to_insert->id, row_to_insert);
-    free(cursor);
+    // void* node = get_page(table->pager, table->root_page_num);
+    // uint32_t num_cells = (*leaf_node_num_cells(node));
+    // Row* row_to_insert = &(statement->row_to_insert);
+    // uint32_t key_to_insert = row_to_insert->id;
+    // Cursor* cursor = table_find(table, key_to_insert);
+    // if (cursor->cell_num < num_cells) {
+    //     uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
+    //     if (key_at_index == key_to_insert) {
+    //         return EXECUTE_DUPLICATE_KEY;
+    //     }
+    // }
+    // leaf_node_insert(cursor, row_to_insert->id, row_to_insert);
+    // free(cursor);
     return EXECUTE_SUCCESS;
 }
 
@@ -691,7 +691,7 @@ ExecuteResult execute_create(Statement* statement, Table* table) {
 }
 
 void print_row(Row* row) {
-    cout << "(" << row->id << ", " << row->username << ", " << row->email << ")" << endl;
+    cout << "(" << row->rootpage << ", " << row->name << ", " << row->sql << ")" << endl;
 }
 
 void print_page(Pager* pager, uint32_t page_num) {
