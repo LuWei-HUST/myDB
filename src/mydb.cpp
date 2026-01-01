@@ -266,8 +266,8 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
     void* node = get_page(table->pager, table->root_page_num);
     uint32_t num_cells = (*leaf_node_num_cells(node));
     Row* row_to_insert = &(statement->row_to_insert);
-    row_to_insert->rootpage = table->root_page_num;
-    uint32_t key_to_insert = row_to_insert->rootpage;
+    row_to_insert->rootpage = table->pager->num_pages - 1;
+    uint32_t key_to_insert = num_cells + 1;
     Cursor* cursor = table_find(table, key_to_insert);
     if (cursor->cell_num < num_cells) {
         uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
@@ -275,7 +275,7 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
             return EXECUTE_DUPLICATE_KEY;
         }
     }
-    leaf_node_insert(cursor, row_to_insert->rootpage, row_to_insert);
+    leaf_node_insert(cursor, key_to_insert, row_to_insert);
     free(cursor);
     return EXECUTE_SUCCESS;
 }
